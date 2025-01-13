@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pushup Log</title>
+</head>
+<body>
+<script>
+    let rawHistory = [];
+    let byDay = [];
+    let byWeek = [];
+    let byMonth = [];
+    let historyTable;
+    let refreshFunction;
+
+    window.onload = () => {
+        historyTable = document.getElementById('history');
+        loadHistory();
+    }
+
+    function addPushups() {
+        const pushups = document.getElementById('pushups').value;
+        fetch(`http://localhost:8080/log?reps=${pushups}`, {
+            method: 'POST',
+        })
+            .then(response => response.json())
+            .then(data => {
+                rawHistory.push(data);
+                reduceRawHistory();
+                refreshFunction();
+            })
+            .catch((error) => {
+                document.getElementById('message').innerText = error;
+                console.error('Error:', error);
+            });
+    }
+
+    function displayRawHistory() {
+        refreshFunction = () => {
+            historyTable.innerHTML = '<tr><th>Pushups</th><th>Date</th></tr>';
+            rawHistory.forEach((entry) => {
+                historyTable.innerHTML += `<tr><td>${entry[0]}</td><td>${new Date(entry[1] * 1000).toLocaleString()}</td></tr>`;
+            });
+        };
+
+        refreshFunction();
+    }
+
+    function reduceRawHistory() {
+        byDay = [];
+        byWeek = [];
+        byMonth = [];
+
+        Object.entries(rawHistory.reduce((acc, entry) => {
+            const date = new Date(entry[1] * 1000).toLocaleDateString();
+            if (!acc[date]) acc[date] = 0;
+            acc[date] += entry[0];
+            return acc;
+        }, {})).forEach(([date, pushups]) => {
+            byDay.push([pushups, new Date(date).getTime()]);
+        });
+
+        byDay.sort((a, b) => a[1] - b[1]);
+
+        Object.entries(rawHistory.reduce((acc, entry) => {
+            const date = new Date(entry[1] * 1000);
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+            date.setDate(diff);
+            date.setHours(0, 0, 0, 0);
+            const t = date.toLocaleDateString();
+            if (!acc[t]) acc[t] = 0;
+            acc[t] += entry[0];
+            return acc;
+        }, {})).forEach(([date, pushups]) => {
+            byWeek.push([pushups, new Date(date).getTime()]);
+        });
+        byWeek.sort((a, b) => a[1] - b[1]);
+
+        Object.entries(rawHistory.reduce((acc, entry) => {
+            const date = new Date(entry[1] * 1000);
+            date.setDate(1);
+            date.setHours(0, 0, 0, 0);
+            const t = date.toLocaleDateString();
+            if (!acc[t]) acc[t] = 0;
+            acc[t] += entry[0];
+            return acc;
+        }, {})).forEach(([date, pushups]) => {
+            byMonth.push([pushups, new Date(date).getTime()]);
+        });
+        byMonth.sort((a, b) => a[1] - b[1]);
+    }
+
+    function loadHistory() {
+        fetch('http://localhost:8080/all')
+            .then(response => response.json())
+            .then(data => {
+                rawHistory = data;
+                reduceRawHistory();
+                displayRawHistory();
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+    }
+
+    function historyByDay() {
+        refreshFunction = () => {
+            historyTable.innerHTML = '<tr><th>Pushups</th><th>Year</th><th>Month</th><th>Day</th></tr>';
+            byDay.forEach(([pushups, date]) => {
+                const d = new Date(date);
+                historyTable.innerHTML += `<tr><td>${pushups}</td><td>${d.getFullYear()}</td><td>${d.getMonth() + 1}</td><td>${d.getDate()}</td></tr>`;
+            });
+        };
+        refreshFunction();
+    }
+
+    function historyByWeek() {
+        refreshFunction = () => {
+            historyTable.innerHTML = '<tr><th>Pushups</th><th>Year</th><th>Month</th><th>Day</th></tr>';
+            byWeek.forEach(([pushups, date]) => {
+                const d = new Date(date);
+                historyTable.innerHTML += `<tr><td>${pushups}</td><td>${d.getFullYear()}</td><td>${d.getMonth() + 1}</td><td>${d.getDate()}</td></tr>`;
+            });
+        };
+        refreshFunction();
+    }
+
+    function historyByMonth() {
+        refreshFunction = () => {
+            historyTable.innerHTML = '<tr><th>Pushups</th><th>Year</th><th>Month</th></tr>';
+            byMonth.forEach(([pushups, date]) => {
+                const d = new Date(date);
+                historyTable.innerHTML += `<tr><td>${pushups}</td><td>${d.getFullYear()}</td><td>${d.getMonth() + 1}</td></tr>`;
+            });
+        };
+        refreshFunction();
+    }
+</script>
+
+<input type="number" id="pushups" placeholder="Enter number of pushups">
+<button onclick="addPushups()">Add Pushups</button>
+<div id="message"></div>
+
+<button onclick="loadHistory()">Load History</button>
+<button onclick="historyByDay()">Group by Day</button>
+<button onclick="historyByWeek()">Group by Week</button>
+<button onclick="historyByMonth()">Group by Month</button>
+<table id="history"></table>
+
+</body>
+</html>
