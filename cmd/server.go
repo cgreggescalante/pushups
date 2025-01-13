@@ -8,6 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -36,7 +37,16 @@ func main() {
 	db := initDb()
 
 	r := gin.Default()
-	r.Use(cors.Default())
+
+	if os.Args[1] == "dev" {
+		r.Use(cors.New(cors.Config{
+			AllowOrigins: []string{"http://localhost"},
+			AllowMethods: []string{"GET", "POST"},
+			AllowHeaders: []string{"Origin"},
+		}))
+	} else {
+		r.Use(cors.New(cors.Config{AllowOrigins: []string{"https://pushups.cgreggescalante.com"}}))
+	}
 	r.Use(logger.SetLogger())
 
 	r.POST("/log", func(c *gin.Context) {
@@ -82,5 +92,5 @@ func main() {
 		c.JSON(http.StatusOK, items)
 	})
 
-	log.Fatal(r.Run(":8080"))
+	log.Fatal(r.Run(":80"))
 }
