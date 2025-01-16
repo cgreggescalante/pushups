@@ -38,16 +38,17 @@ func main() {
 
 	r := gin.Default()
 
-	if os.Args[1] == "dev" {
-		r.Use(cors.New(cors.Config{
-			AllowOrigins: []string{"http://localhost"},
-			AllowMethods: []string{"GET", "POST"},
-			AllowHeaders: []string{"Origin"},
-		}))
-	} else {
-		r.Use(cors.New(cors.Config{AllowOrigins: []string{"https://pushups.cgreggescalante.com"}}))
+	corsRule := cors.Default()
+	port := ":80"
+	if os.Args[1] != "dev" {
+		port = ":8080"
+		corsRule = cors.New(cors.Config{AllowOrigins: []string{"https://pushups.cgreggescalante.com"}})
 	}
+
+	r.Use(corsRule)
 	r.Use(logger.SetLogger())
+
+	r.StaticFile("/", "frontend/index.html")
 
 	r.POST("/log", func(c *gin.Context) {
 		count := c.Query("reps")
@@ -92,5 +93,5 @@ func main() {
 		c.JSON(http.StatusOK, items)
 	})
 
-	log.Fatal(r.Run(":80"))
+	log.Fatal(r.Run(port))
 }
