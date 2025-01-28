@@ -40,7 +40,7 @@ func main() {
 
 	corsRule := cors.Default()
 	port := ":80"
-	if os.Args[1] != "dev" {
+	if os.Args[1] != "prod" {
 		port = ":8080"
 		corsRule = cors.New(cors.Config{AllowOrigins: []string{"https://pushups.cgreggescalante.com"}})
 	}
@@ -48,7 +48,7 @@ func main() {
 	r.Use(corsRule)
 	r.Use(logger.SetLogger())
 
-	r.StaticFile("/", "frontend/index.html")
+	r.StaticFile("/", "index.html")
 
 	r.POST("/log", func(c *gin.Context) {
 		count := c.Query("reps")
