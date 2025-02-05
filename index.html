@@ -112,7 +112,6 @@
                 const d = new Date(date);
                 historyTable.innerHTML += `<tr><td>${pushups}</td><td>${d.getFullYear()}</td><td>${d.getMonth() + 1}</td><td>${d.getDate()}</td></tr>`;
             });
-            const elem = document.getElementById('chart');
 
             const labels = [];
             const data = [];
@@ -127,32 +126,35 @@
                 }
             }
 
-            const rolling3 = [];
             const rolling7 = [];
             const rolling14 = [];
+            const rolling28 = [];
 
             for (let i = 0; i < data.length; i++) {
-                rolling3.push(0)
                 rolling7.push(0)
                 rolling14.push(0)
-                for (let j = 0; j < 3; j++) {
-                    if (i - j < 0) { break }
-                    rolling3[i] += data[i - j] / 3
-                    rolling7[i] += data[i - j] / 7
-                    rolling14[i] += data[i - j] / 14
-                }
-                for (let j = 3; j < 7; j++) {
+                rolling28.push(0)
+                for (let j = 0; j < 7; j++) {
                     if (i - j < 0) { break }
                     rolling7[i] += data[i - j] / 7
                     rolling14[i] += data[i - j] / 14
+                    rolling28[i] += data[i - j] / 28
                 }
-                for (let j = 7; j < 14; j++) {
+                for (let j = 3; j < 14; j++) {
                     if (i - j < 0) { break }
                     rolling14[i] += data[i - j] / 14
+                    rolling28[i] += data[i - j] / 28
+                }
+                for (let j = 7; j < 28; j++) {
+                    if (i - j < 0) { break }
+                    rolling28[i] += data[i - j] / 28
                 }
             }
 
-            new Chart(elem, {
+            const elem = document.getElementById('chart-div');
+            const canvas = document.createElement("canvas");
+
+            new Chart(canvas, {
                 type: 'bar',
                 data: {
                     labels: labels.map(d => `${d.getMonth() + 1}-${d.getDate()}`),
@@ -160,8 +162,8 @@
                         label: '# of pushups',
                         data: data
                     }, {
-                        label: '3 Day Avg',
-                        data: rolling3,
+                        label: '28 Day Avg',
+                        data: rolling28,
                         type: 'line',
                         tension: .3
                     }, {
@@ -177,6 +179,9 @@
                     }]
                 }
             })
+
+            elem.innerHTML = ''
+            elem.appendChild(canvas)
         };
         refreshFunction();
     }
@@ -213,8 +218,7 @@
 <button onclick="historyByWeek()">Group by Week</button>
 <button onclick="historyByMonth()">Group by Month</button>
 <table id="history"></table>
-<div>
-    <canvas id="chart"></canvas>
+<div id="chart-div">
 </div>
 </body>
 </html>
