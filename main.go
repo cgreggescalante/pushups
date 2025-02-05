@@ -2,13 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"flag"
+	"fmt"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/logger"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"time"
 )
@@ -34,16 +35,14 @@ func initDb() *sql.DB {
 }
 
 func main() {
+	var port int
+	flag.IntVar(&port, "port", 80, "port to listen on")
+
 	db := initDb()
 
 	r := gin.Default()
 
 	corsRule := cors.Default()
-	port := ":80"
-	if os.Args[1] != "prod" {
-		port = ":8080"
-		corsRule = cors.New(cors.Config{AllowOrigins: []string{"https://pushups.cgreggescalante.com"}})
-	}
 
 	r.Use(corsRule)
 	r.Use(logger.SetLogger())
@@ -93,5 +92,5 @@ func main() {
 		c.JSON(http.StatusOK, items)
 	})
 
-	log.Fatal(r.Run(port))
+	log.Fatal(r.Run(fmt.Sprintf(":%d", port)))
 }
